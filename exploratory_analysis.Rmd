@@ -1,7 +1,7 @@
 ---
 title: "Exploring the Data"
 date: "2025-11-18"
-output: github_document
+output: html_document
 ---
 
 ```{r, include=FALSE, message = FALSE, warning = FALSE}
@@ -89,18 +89,55 @@ airplane_df = airplane_df |>
   select(datetime, year, decade, month, month_name, everything()) 
 ```
 
-## Exploring the data. 
+# Exploring the data. 
 
 Crashes per year?
 
 ```{r}
+# ggplot
+
 airplane_df |> 
   group_by(year) |> 
   summarize(total_crashes = n()) |> 
   ggplot(aes(x = year, y = total_crashes)) + 
   geom_line() +
   geom_point() + 
-  labs(title = "Airplane Crashes per Year")
+  geom_smooth(span = 0.2, color = "red", se = FALSE) +
+  labs(
+    title = "Airplane Crashes per Year",
+       x  = "Year",
+       y  = "Number of Crashes"
+    )
+
+# interactive plot with plotly
+
+airplane_df |> 
+  count(year) |> 
+  plot_ly(
+    x = ~year, 
+    y = ~n,
+    type = "scatter",
+    mode = "lines+markers",
+    hovertemplate = "Year: %{x}<br>Crashes: %{y}<extra></extra>"
+  ) |> 
+  layout(
+    title = list(
+      text = "Airplane Crashes per Year",
+      font = list(size = 20)
+    ),
+    xaxis = list(
+      title = list(
+        text = "Year",
+        font = list(size = 16)
+      )
+      ),
+    yaxis = list(
+      title = list(
+        text = "Number of Crashes",
+        font = list(size = 16)
+      )
+    )
+  )
 ```
 
 Seasonal trends, combining all years?
@@ -118,11 +155,22 @@ airplane_df |>
 Top airlines with crashes?
 
 ```{r}
+
 airplane_df |> 
   group_by(operator) |> 
-  summarise(total_crashes = n()) |> 
-  arrange(desc(total_crashes)) |> 
-  head(10)  # top 10 operators
+  summarise(total_crashes = n(), .groups = "drop") |> 
+  slice_max(total_crashes, n = 15) |>  # select the top 15 operators
+  ggplot(aes(x = reorder(operator, total_crashes), y = total_crashes )) +
+  geom_col(fill = "blue") +
+  coord_flip() +
+  labs(
+    title = "Top 15 Airline Operators with the Most Crashes",
+    x     = "Airline Operators",
+    y     = "Number of Crashes"
+  )  + 
+  theme(
+    axis.title.y = element_text(margin = margin(r = 20))
+  )
 
 ```
 
@@ -142,32 +190,6 @@ airplane_df |>
 # Looking at seasonal and yearly tends more closely.
 
 ```{r}
-crashes_per_yr = airplane_df |> 
-  group_by(year) |> 
-  summarize(total_crashes = n())
-
-# crashes per year
-ggplot(crashes_per_yr, aes(x = year, y = total_crashes)) + 
-  geom_line(color = "blue") +
-  geom_point(color = "darkblue") +
-  labs(
-    title = "Airplane Crashes per Year",
-    x     = "Year",
-    y     = "Number of Crashes")
-
-# crashes by month, combining all years
-crashes_by_month = airplane_df |> 
-  group_by(month_name) |> 
-  summarize(total_crashes = n()) |> 
-  mutate(month_name = factor(
-    month_name, levels = month.abb))
-
-ggplot(crashes_by_month, aes(x = month_name, y = total_crashes)) +
-  geom_col(fill = "darkred") +
-  labs(
-    title = "Airplane Crashes per Month",
-    x     = "Month",
-    y     = "Number of Crashes")
 
 # heatmap of crashes by year and month
 airplane_df |> 
@@ -180,43 +202,6 @@ airplane_df |>
        y = "Month",
        fill = "Number of Crashes")
 
-```
-
-# Interactive plotly line plot for seasonal changes per decade
-
-```{r}
-# counting crashes by decade and month 
-monthly_decade = airplane_df |> 
-  count(decade, month, month_name) |> 
-  arrange(decade, month)
-
-# getting unique decades for plotting
-decade_list = monthly_decade |> 
-  distinct(decade) |> 
-  pull(decade)
-
-airplane_df |> 
-  lapply(decade_list, function(d) {
-    
-    monthly_decade |> 
-      filter(decade == d) |> 
-      plot_ly(
-        x = ~month_label, 
-        y = ~n, 
-        type = "scatter",
-        mode = "lines+markers",
-        hovertemplate = paste0(
-            "Decade: ", d, "<br>",
-        "Month: %{x}<br>",
-        "Crashes: %{y}<extra></extra>"
-      )
-      ) |> 
-      layout(
-        title = paste0("Decade: ", ,d),
-        xaxis = list(title = ""),
-        yaxis = list(title = "Crashes")
-      )
-  })
 ```
 
 
