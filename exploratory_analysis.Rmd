@@ -26,7 +26,6 @@ theme_set(theme_economist() + theme(legend.position = "bottom"))
 ```
 
 
-
 # Loading and cleaning the data.
 
 ```{r}
@@ -37,7 +36,6 @@ airplane_df = read_csv("datasets/airplane_crashes.csv") |>
   # removes an unnecessary column
   select(-flight_number, -fatalities_passangers, -fatalities_crew, -aboard_passangers, -aboard_crew) |> 
   drop_na(date, time, operator, route, aboard, fatalities, registration, cn_ln, ground, summary)       
-
 
 ```
 
