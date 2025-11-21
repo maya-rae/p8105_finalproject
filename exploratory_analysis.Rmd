@@ -9,6 +9,7 @@ output: github_document
 library(tidyverse)
 library(lubridate)
 library(stringr)
+library(plotly)
 library(ggthemes)
 
 knitr::opts_chunk$set(
@@ -59,7 +60,6 @@ airplane_df = airplane_df |>
   drop_na(datetime)
 ```
 
-
 Converting variables to their proper variable types.
 
 ```{r}
@@ -74,11 +74,20 @@ airplane_df = airplane_df |>
     fatalities =  as.numeric(ground),
     operator   = as.factor(operator)  # to group by operator
     ) |> 
-  select(datetime, year, month, month_name, everything()) |> 
   select(-date, -time)
 
 ```
 
+Creating a decade column, now that year is numeric.
+
+```{r}
+airplane_df = airplane_df |> 
+  mutate(
+    decade = floor(year / 10) * 10, 
+    decade = paste0(decade, "s")
+  ) |> 
+  select(datetime, year, decade, month, month_name, everything()) 
+```
 
 ## Exploring the data. 
 
@@ -161,18 +170,53 @@ ggplot(crashes_by_month, aes(x = month_name, y = total_crashes)) +
     y     = "Number of Crashes")
 
 # heatmap of crashes by year and month
-crashes_heatmap = airplane_df |> 
-  group_by(year, month_name) |> 
-  summarize(total_crashes = n(), .groups = "drop") |> 
-  mutate(month_name = factor(month_name, levels = month.abb))
-
-ggplot(crashes_heatmap, aes(x = year, y = month_name, fill = total_crashes)) +
+airplane_df |> 
+  count(decade, month_name) |>  # counts crashes in the decade/month
+  ggplot(aes(x = decade, y = month_name, fill = n)) +
   geom_tile(color = "white") +
   scale_fill_gradient(low = "white", high = "red") +
   labs(title = "Heatmap of Airplane Crashes by Year and Month",
-       x = "Year",
+       x = "Deacde",
        y = "Month",
        fill = "Number of Crashes")
 
 ```
+
+# Interactive plotly line plot for seasonal changes per decade
+
+```{r}
+# counting crashes by decade and month 
+monthly_decade = airplane_df |> 
+  count(decade, month, month_name) |> 
+  arrange(decade, month)
+
+# getting unique decades for plotting
+decade_list = monthly_decade |> 
+  distinct(decade) |> 
+  pull(decade)
+
+airplane_df |> 
+  lapply(decade_list, function(d) {
+    
+    monthly_decade |> 
+      filter(decade == d) |> 
+      plot_ly(
+        x = ~month_label, 
+        y = ~n, 
+        type = "scatter",
+        mode = "lines+markers",
+        hovertemplate = paste0(
+            "Decade: ", d, "<br>",
+        "Month: %{x}<br>",
+        "Crashes: %{y}<extra></extra>"
+      )
+      ) |> 
+      layout(
+        title = paste0("Decade: ", ,d),
+        xaxis = list(title = ""),
+        yaxis = list(title = "Crashes")
+      )
+  })
+```
+
 
