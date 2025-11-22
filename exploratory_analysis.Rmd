@@ -34,9 +34,7 @@ airplane_df = read_csv("datasets/airplane_crashes_data.csv") |>
   filter(ground != "NULL", aboard != "NULL") |> 
 
   # removes an unnecessary column
-  select(-flight_number, -time) |> 
-  drop_na(date, operator, route, aboard, fatalities, registration, cn_in, ground, summary)   
-
+  select(-flight_number, -time, - registration)
 
 ```
 
@@ -103,7 +101,7 @@ airplane_df = airplane_df |>
 Crashes per year?
 
 ```{r}
-# ggplot
+# first, using ggplot
 
 airplane_df |> 
   group_by(year) |> 
@@ -117,8 +115,11 @@ airplane_df |>
        x  = "Year",
        y  = "Number of Crashes"
     )
+```
 
-# interactive plot with plotly
+Interactive plot of crashes per year with plotly.
+
+```{r}
 
 airplane_df |> 
   count(year) |> 
@@ -148,6 +149,7 @@ airplane_df |>
     )
   )
 ```
+
 
 Seasonal trends, combining all years?
 
