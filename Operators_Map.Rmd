@@ -115,3 +115,30 @@ unique_locations = airplane_df |>
 ```
 
 
+```{r}
+geocoded_locations = unique_locations |>
+  geocode(
+    address = location_clean,
+    method = "osm",
+    lat = Latitude,
+    long = Longitude
+    )
+```
+
+```{r}
+write.csv(geocoded_locations, "geocoded_cache.csv", row.names = FALSE)
+```
+
+```{r}
+df_geo = airplane_df |> ##geocoded info joining back to full dataset 
+  left_join(
+    geocoded_locations,
+    by = c("Location" = "location_clean")
+)
+
+## Filtering rows with valid coordinates 
+df_map = df_geo |>
+  filter(!is.na(Latitude), !is.na(Longitude))
+
+
+```
