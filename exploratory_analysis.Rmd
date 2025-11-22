@@ -188,6 +188,28 @@ airplane_df |>
 
 ```
 
+Top aircraft types with crashes?
+
+```{r}
+
+airplane_df |> 
+  filter(!is.na(type), type != "n/a") |> 
+  group_by(type) |> 
+  summarize(total_crashes = n(), .groups = "drop") |> 
+  slice_max(total_crashes, n = 15) |>  # select the top 15 aircraft types
+  ggplot(aes(x = reorder(type, total_crashes), y = total_crashes)) +
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
+  labs(
+    title = "Top 15 Aircraft Types with the Most Crashes",
+    x     = "Aircraft Type",
+    y     = "Number of Crashes"
+  ) +
+    theme(
+    axis.title.y = element_text(margin = margin(r = 20))
+  )
+```
+
 Looking at the number of fatalities per year. I have excluded the year 2001, which was an outlier and had 5,641 fatalities, because of the 9/11 attacks.
 
 ```{r}
